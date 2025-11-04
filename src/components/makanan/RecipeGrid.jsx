@@ -48,11 +48,11 @@ export default function RecipeGrid({ recipes, onRecipeClick }) {
           <div 
             key={recipe.id} 
             ref={el => cardRefs.current[index] = el}
-            className={`group transform transition-all duration-700 ${
+            className={group transform transition-all duration-700 ${
               visibleCards.has(index) 
                 ? 'translate-y-0 opacity-100' 
                 : 'translate-y-8 opacity-0'
-            }`}
+            }}
           >
             
             <div 
