@@ -53,19 +53,29 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
             : [{ name: '', quantity: '' }]
           );
           
-          // Convert steps to array of strings if they're objects
-          let stepsArray = [''];
+          // --- MODIFIKASI: Membaca 'instruction' dari data resep ---
+          // Konversi steps (yang berisi objek) menjadi array of strings (hanya instruksinya)
+          let stepsArray = ['']; // Default jika tidak ada steps
           if (recipe.steps && recipe.steps.length > 0) {
             stepsArray = recipe.steps.map(step => {
-              // If step is an object with a 'step' property, extract it
-              if (typeof step === 'object' && step.step) {
-                return step.step;
+              // API kemungkinan mengembalikan objek dengan properti 'instruction'
+              if (typeof step === 'object' && step.instruction) {
+                return step.instruction;
               }
-              // If step is already a string, use it
-              return typeof step === 'string' ? step : '';
+              // Fallback jika data sudah berupa string (misalnya dari draft lama)
+              if (typeof step === 'string') {
+                return step;
+              }
+              return ''; // Jika format tidak dikenali
             });
           }
+          // Pastikan tidak ada array kosong jika sebelumnya ada steps
+          if (stepsArray.length === 0) {
+            stepsArray = [''];
+          }
           setSteps(stepsArray);
+          // --- AKHIR MODIFIKASI ---
+
         } else {
           throw new Error('Gagal memuat data resep');
         }
@@ -195,18 +205,11 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
       return false;
     }
 
-    // Validate steps
-    const validSteps = steps.filter(step => {
-      // Ensure step is a string before calling trim
-      if (typeof step === 'string') {
-        return step.trim();
-      }
-      // If step is an object, check if it has a 'step' property
-      if (typeof step === 'object' && step.step) {
-        return step.step.trim();
-      }
-      return false;
-    });
+    // --- MODIFIKASI: Validasi steps sebagai array of strings ---
+    // Validate steps (State `steps` kini adalah array of strings)
+    const validSteps = steps.filter(step => typeof step === 'string' && step.trim());
+    // --- AKHIR MODIFIKASI ---
+    
     if (validSteps.length === 0) {
       setError('Minimal harus ada 1 langkah');
       return false;
@@ -215,7 +218,7 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
     return true;
   };
 
-  // Submit form (PATCH - partial update)
+  // Submit form (PUT - full update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -230,6 +233,7 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
       // Prepare update data
       const updateData = {};
 
+      // --- MODIFIKASI LOGIKA GAMBAR ---
       // Step 1: Upload new image if selected
       if (imageFile) {
         setUploading(true);
@@ -240,28 +244,25 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
           throw new Error('Gagal upload gambar');
         }
         setUploading(false);
-      } else if (!currentImageUrl && !imageFile) {
-        // If original image was removed and no new image
+      } else if (currentImageUrl) {
+        // JIKA TIDAK ADA FILE BARU, tapi currentImageUrl ADA (tidak dihapus),
+        // gunakan URL yang ada sekarang.
+        updateData.image_url = currentImageUrl;
+      } else {
+        // Jika tidak ada file baru DAN currentImageUrl kosong (dihapus oleh user)
         updateData.image_url = '';
       }
+      // --- AKHIR MODIFIKASI LOGIKA GAMBAR ---
 
       // Step 2: Add other fields
       const validIngredients = ingredients.filter(ing => ing.name.trim() && ing.quantity.trim());
-      const validSteps = steps.filter(step => {
-        if (typeof step === 'string') {
-          return step.trim();
-        }
-        if (typeof step === 'object' && step.step) {
-          return step.step.trim();
-        }
-        return false;
-      }).map(step => {
-        // Convert to string if it's an object
-        if (typeof step === 'object' && step.step) {
-          return step.step;
-        }
-        return step;
-      });
+      
+      // --- MODIFIKASI: Menyiapkan steps (array of strings) untuk API ---
+      // State `steps` sudah berupa array of strings, tinggal filter dan trim
+      const validSteps = steps
+        .filter(step => typeof step === 'string' && step.trim())
+        .map(step => step.trim());
+      // --- AKHIR MODIFIKASI ---
 
       updateData.name = formData.name.trim();
       updateData.category = formData.category;
@@ -272,7 +273,7 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
       updateData.difficulty = formData.difficulty;
       updateData.is_featured = formData.is_featured;
       updateData.ingredients = validIngredients;
-      updateData.steps = validSteps;
+      updateData.steps = validSteps; // Kirim array of strings
 
       // Step 3: Update recipe using PUT
       const result = await recipeService.updateRecipe(recipeId, updateData);
@@ -590,7 +591,7 @@ export default function EditRecipePage({ recipeId, onBack, onSuccess }) {
                       {index + 1}
                     </div>
                     <textarea
-                      value={step}
+                      value={step} // State `steps` adalah array of strings
                       onChange={(e) => handleStepChange(index, e.target.value)}
                       placeholder="Tulis langkah..."
                       rows={2}
