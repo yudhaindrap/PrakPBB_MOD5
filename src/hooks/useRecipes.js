@@ -1,7 +1,7 @@
 // src/hooks/useRecipes.js
 import { useState, useEffect, useCallback } from 'react';
 import recipeService from '../services/recipeService';
-import { apiCache } from '../Utils/cache'; // Import cache
+import { apiCache } from '../utils/cache.js'; // Import cache
 
 /**
  * Custom hook for fetching recipes
