@@ -7,7 +7,7 @@ import MobileNavbar from './components/navbar/MobileNavbar';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import './index.css';
 import PWABadge from './PWABadge';
-import { apiCache } from './utils/cache';
+import { apiCache } from './utils/cache.js'; // Tambahkan .js
 
 // --- Lazy Load Pages ---
 const HomePage = lazy(() => import('./pages/HomePage'));
