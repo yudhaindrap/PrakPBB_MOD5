@@ -17,7 +17,7 @@ export function formatDate(dateString) {
   
   return date.toLocaleDateString('id-ID', options);
 }
-
+ 
 /**
  * Format date to relative time (e.g., "2 hours ago")
  * @param {string} dateString - ISO date string
